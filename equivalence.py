@@ -32,11 +32,13 @@ class Disequality(EquivalenceOp):
 
 class Theory:
 
-    def __init__(self, identifier_map, variables):
+    def __init__(self, identifier_map, variables, model):
 
         self.identifier_map = identifier_map
         self.variables = variables
+        self.model = model
         self.nodes = dict()
+        self.sat = None
 
         for v in self.variables:
             self.nodes[v.identifier] = union_find.UnionNode(v)
@@ -51,24 +53,24 @@ class Theory:
 
         return left_node, right_node
 
-    def build_relation(self, model):
+    def build_relation(self):
 
-        for var in model:
+        for var in self.model:
             left_node, right_node = self.get_corresponding_nodes(var.name())
 
-            if z3.is_true(model[var]):
+            if z3.is_true(self.model[var]):
                 left_node.merge(right_node)
 
-    def check(self, model):
+    def check(self):
 
-        self.build_relation(model)
+        self.build_relation()
 
-        sat = True
+        self.sat = True
 
-        for var in model.decls():
+        for var in self.model.decls():
             left_node, right_node = self.get_corresponding_nodes(var.name())
 
-            if not z3.is_true(model[var]) and left_node == right_node:
-                sat = False
+            if not z3.is_true(self.model[var]) and left_node == right_node:
+                self.sat = False
 
-        return sat
+        return self.sat

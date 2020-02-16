@@ -28,8 +28,8 @@ s.add(z3.And(b1, z3.Or(b2, z3.Not(b3), z3.Not(b4)), z3.Or(b5, b4), z3.Or(z3.Not(
 print(s.check())
 print(s.model())
 
-th = eq.Theory(identifier_map, [x1, x2, x3, x4])
-print(th.check(s.model()))
+th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
+print(th.check())
 
 
 """
@@ -57,8 +57,8 @@ s.add(z3.And(b1, b2, b3, z3.Not(b4)))
 print(s.check())
 print(s.model())
 
-th = eq.Theory(identifier_map, [x1, x2, x3, x4])
-print(th.check(s.model()))
+th = eq.Theory(identifier_map, [x1, x2, x3, x4],s.model())
+print(th.check())
 
 
 """
@@ -85,5 +85,5 @@ s.add(z3.And(b1, b2, b3))
 print(s.check())
 print(s.model())
 
-th = eq.Theory(identifier_map, [x1, x2, x3, x4])
-print(th.check(s.model()))
+th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
+print(th.check())
