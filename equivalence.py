@@ -32,7 +32,7 @@ class Disequality(EquivalenceOp):
 
 class Theory:
 
-    def __init__(self, identifier_map, variables, model):
+    def __init__(self, identifier_map, variables, model=None):
 
         self.identifier_map = identifier_map
         self.variables = variables
@@ -53,6 +53,11 @@ class Theory:
 
         return left_node, right_node
 
+    def clear_relation(self):
+
+        for key in self.nodes:
+            self.nodes[key].clear()
+
     def build_relation(self):
 
         for var in self.model:
@@ -61,7 +66,11 @@ class Theory:
             if z3.is_true(self.model[var]):
                 left_node.merge(right_node)
 
-    def check(self):
+    def check(self, model=None):
+
+        if model is not None:
+            self.model = model
+            self.clear_relation()
 
         self.build_relation()
 

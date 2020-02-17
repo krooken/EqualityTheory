@@ -12,6 +12,10 @@ class UnionNode:
         else:
             return self.find() == other.find()
 
+    def clear(self):
+        self.parent = None
+        self.children = []
+
     def neighbors(self):
         return self.children + [self.parent]
 
