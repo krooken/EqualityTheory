@@ -38,7 +38,7 @@ class Theory:
         self.variables = variables
         self.model = model
         self.nodes = dict()
-        self.sat = None
+        self.sat = z3.unknown
 
         for v in self.variables:
             self.nodes[v.identifier] = union_find.UnionNode(v)
@@ -74,19 +74,19 @@ class Theory:
 
         self.build_relation()
 
-        self.sat = True
+        self.sat = z3.sat
 
         for var in self.model.decls():
             left_node, right_node = self.get_corresponding_nodes(var.name())
 
             if not z3.is_true(self.model[var]) and left_node == right_node:
-                self.sat = False
+                self.sat = z3.unsat
 
         return self.sat
 
     def learn_clause(self):
 
-        if self.sat is None or self.sat:
+        if self.sat == z3.unknown or self.sat == z3.sat:
             return None
 
         else:
