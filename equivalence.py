@@ -74,3 +74,17 @@ class Theory:
                 self.sat = False
 
         return self.sat
+
+    def learn_clause(self):
+
+        if self.sat is None or self.sat:
+            return None
+
+        else:
+            clause = []
+            for var in self.model:
+                bool_var = z3.Bool(var.name())
+                if z3.is_true(self.model[var]):
+                    bool_var = z3.Not(bool_var)
+                clause += [bool_var]
+            return z3.Or(clause)

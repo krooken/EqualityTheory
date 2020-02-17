@@ -30,6 +30,9 @@ print(s.model())
 
 th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
 print(th.check())
+print(th.learn_clause())
+s.add(th.learn_clause())
+print(s.check())
 
 
 """
@@ -57,8 +60,11 @@ s.add(z3.And(b1, b2, b3, z3.Not(b4)))
 print(s.check())
 print(s.model())
 
-th = eq.Theory(identifier_map, [x1, x2, x3, x4],s.model())
+th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
 print(th.check())
+print(th.learn_clause())
+s.add(th.learn_clause())
+print(s.check())
 
 
 """
@@ -87,3 +93,4 @@ print(s.model())
 
 th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
 print(th.check())
+print(th.learn_clause())
