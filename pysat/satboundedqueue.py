@@ -1,6 +1,7 @@
-from satutils import *
+from .satutils import *
 
-class SatBoundedQueue():
+
+class SatBoundedQueue:
 
     def __init__(self, size=100):
         self._data = MyArray('I')
@@ -49,5 +50,3 @@ class SatBoundedQueue():
 
     def __len__(self):
         return self._queueSize
-
-
