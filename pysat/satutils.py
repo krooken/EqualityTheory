@@ -32,7 +32,7 @@ class MyArray(array):
     """ My own array with growing function """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        array.__init__(*args)
 
     def growTo(self, size, fillWith=0):
         while len(self) < size:
