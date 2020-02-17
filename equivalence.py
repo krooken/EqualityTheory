@@ -97,3 +97,45 @@ class Theory:
                     bool_var = z3.Not(bool_var)
                 clause += [bool_var]
             return z3.Or(clause)
+
+
+class Solver:
+
+    def __init__(self, identifier_map, variables):
+
+        self.solver = z3.SolverFor("QF_FD")
+        self.theory = Theory(identifier_map, variables)
+        self.res = z3.unknown
+        self.model = None
+        self.assertions = None
+        self.formula = None
+
+    def check(self, formula):
+
+        self.solver.add(formula)
+        self.formula = formula
+
+        while True:
+            sat_res = self.solver.check()
+            if z3.unsat == sat_res:
+                self.res = sat_res
+                break
+            elif z3.unknown == sat_res:
+                self.res = sat_res
+                break
+            else:
+                theory_res = self.theory.check(self.solver.model())
+                if z3.sat == theory_res:
+                    self.res = theory_res
+                    break
+                learnt_clause = self.theory.learn_clause()
+                self.solver.add(learnt_clause)
+                self.formula = z3.And(self.formula, learnt_clause)
+
+        try:
+            self.model = self.solver.model()
+        except z3.Z3Exception:
+            self.model = None
+        self.assertions = self.solver.assertions()
+        self.formula = z3.simplify(self.formula)
+        return self.res

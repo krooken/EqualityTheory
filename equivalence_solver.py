@@ -23,27 +23,14 @@ identifier_map = \
 
 b1, b2, b3, b4, b5, b6 = z3.Bools('b1 b2 b3 b4 b5 b6')
 
-s = z3.SolverFor("QF_FD")
-s.add(z3.And(b1, z3.Or(b2, z3.Not(b3), z3.Not(b4)), z3.Or(b5, b4), z3.Or(z3.Not(b2), b6)))
-th = eq.Theory(identifier_map, [x1, x2, x3, x4])
+formula = z3.And(b1, z3.Or(b2, z3.Not(b3), z3.Not(b4)), z3.Or(b5, b4), z3.Or(z3.Not(b2), b6))
 
-while True:
-    res = s.check()
-    if z3.unsat == res:
-        print(res)
-        break
-    elif z3.unknown == res:
-        print(res)
-        break
-    else:
-        res = th.check(s.model())
-        if z3.sat == res:
-            print(res)
-            break
-        s.add(th.learn_clause())
-
-print(s.model())
-print(s.assertions())
+s = eq.Solver(identifier_map, [x1, x2, x3, x4])
+s.check(formula)
+print(s.res)
+print(s.model)
+print(s.assertions)
+print(s.formula)
 
 
 """
@@ -66,16 +53,14 @@ identifier_map = \
 
 b1, b2, b3, b4 = z3.Bools('b1 b2 b3 b4')
 
-s = z3.SolverFor("QF_FD")
-s.add(z3.And(b1, b2, b3, z3.Not(b4)))
-print(s.check())
-print(s.model())
+formula = z3.And(b1, b2, b3, z3.Not(b4))
 
-th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
-print(th.check())
-print(th.learn_clause())
-s.add(th.learn_clause())
-print(s.check())
+s = eq.Solver(identifier_map, [x1, x2, x3, x4])
+s.check(formula)
+print(s.res)
+print(s.model)
+print(s.assertions)
+print(s.formula)
 
 
 """
@@ -97,11 +82,11 @@ identifier_map = \
 
 b1, b2, b3 = z3.Bools('b1 b2 b3')
 
-s = z3.SolverFor("QF_FD")
-s.add(z3.And(b1, b2, b3))
-print(s.check())
-print(s.model())
+formula = z3.And(b1, b2, b3)
 
-th = eq.Theory(identifier_map, [x1, x2, x3, x4], s.model())
-print(th.check())
-print(th.learn_clause())
+s = eq.Solver(identifier_map, [x1, x2, x3, x4])
+s.check(formula)
+print(s.res)
+print(s.model)
+print(s.assertions)
+print(s.formula)
