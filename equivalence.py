@@ -1,5 +1,6 @@
 import union_find
 import z3
+import pysat
 
 
 class Variable:
@@ -38,7 +39,7 @@ class Theory:
         self.variables = variables
         self.model = model
         self.nodes = dict()
-        self.sat = z3.unknown
+        self.sat = pysat.Solver.Constants.lit_Undef
 
         for v in self.variables:
             self.nodes[v.identifier] = union_find.UnionNode(v)
@@ -61,9 +62,9 @@ class Theory:
     def build_relation(self):
 
         for var in self.model:
-            left_node, right_node = self.get_corresponding_nodes(var.name())
+            left_node, right_node = self.get_corresponding_nodes(abs(var))
 
-            if z3.is_true(self.model[var]):
+            if var > 0:
                 left_node.merge(right_node)
 
     def check(self, model=None):
@@ -74,68 +75,64 @@ class Theory:
 
         self.build_relation()
 
-        self.sat = z3.sat
+        self.sat = pysat.Solver.Constants.lit_True
 
-        for var in self.model.decls():
-            left_node, right_node = self.get_corresponding_nodes(var.name())
+        for var in self.model:
+            left_node, right_node = self.get_corresponding_nodes(abs(var))
 
-            if not z3.is_true(self.model[var]) and left_node == right_node:
-                self.sat = z3.unsat
+            if not var > 0 and left_node == right_node:
+                self.sat = pysat.Solver.Constants.lit_False
 
         return self.sat
 
     def learn_clause(self):
 
-        if self.sat == z3.unknown or self.sat == z3.sat:
+        if self.sat == pysat.Solver.Constants.lit_Undef or self.sat == pysat.Solver.Constants.lit_True:
             return None
 
         else:
             clause = []
             for var in self.model:
-                bool_var = z3.Bool(var.name())
-                if z3.is_true(self.model[var]):
-                    bool_var = z3.Not(bool_var)
+                bool_var = -var
                 clause += [bool_var]
-            return z3.Or(clause)
+            return clause
 
 
 class Solver:
 
     def __init__(self, identifier_map, variables):
 
-        self.solver = z3.SolverFor("QF_FD")
+        self.solver = pysat.Solver()
         self.theory = Theory(identifier_map, variables)
-        self.res = z3.unknown
+        self.res = pysat.Solver.Constants.lit_Undef
         self.model = None
         self.assertions = None
         self.formula = None
 
     def check(self, formula):
 
-        self.solver.add(formula)
         self.formula = formula
 
         while True:
-            sat_res = self.solver.check()
-            if z3.unsat == sat_res:
+            self.solver = pysat.Solver()
+            self.solver._config.verbosity = 0
+            for clause in self.formula:
+                self.solver.addClause(clause)
+            self.solver.buildDataStructure()
+            sat_res = self.solver.solve(None)
+            if pysat.Solver.Constants.lit_False == sat_res:
                 self.res = sat_res
                 break
-            elif z3.unknown == sat_res:
+            elif pysat.Solver.Constants.lit_Undef == sat_res:
                 self.res = sat_res
                 break
             else:
-                theory_res = self.theory.check(self.solver.model())
-                if z3.sat == theory_res:
+                theory_res = self.theory.check(self.solver.finalModel)
+                if pysat.Solver.Constants.lit_True == theory_res:
                     self.res = theory_res
                     break
                 learnt_clause = self.theory.learn_clause()
-                self.solver.add(learnt_clause)
-                self.formula = z3.And(self.formula, learnt_clause)
+                self.formula += [learnt_clause]
 
-        try:
-            self.model = self.solver.model()
-        except z3.Z3Exception:
-            self.model = None
-        self.assertions = self.solver.assertions()
-        self.formula = z3.simplify(self.formula)
+        self.model = self.solver.finalModel
         return self.res

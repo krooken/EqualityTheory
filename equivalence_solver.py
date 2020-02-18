@@ -1,7 +1,4 @@
-import z3
 import equivalence as eq
-
-import pysat
 
 """
 (x1 == x4) ^ (x1 == x2 v x1 != x3 v x2 != x4) ^ (x3 == x4 v x2 == x4) ^ (x1 != x2 v x2 == x3)
@@ -21,11 +18,14 @@ varb5 = eq.Equality(x3, x4)
 varb6 = eq.Equality(x2, x3)
 
 identifier_map = \
-    {'b1': varb1, 'b2': varb2, 'b3': varb3, 'b4': varb4, 'b5': varb5, 'b6': varb6}
+    {1: varb1, 2: varb2, 3: varb3, 4: varb4, 5: varb5, 6: varb6}
 
-b1, b2, b3, b4, b5, b6 = z3.Bools('b1 b2 b3 b4 b5 b6')
-
-formula = z3.And(b1, z3.Or(b2, z3.Not(b3), z3.Not(b4)), z3.Or(b5, b4), z3.Or(z3.Not(b2), b6))
+formula = [
+    [1],
+    [2, -3, -4],
+    [5, 4],
+    [-2, 6]
+]
 
 s = eq.Solver(identifier_map, [x1, x2, x3, x4])
 s.check(formula)
@@ -50,11 +50,14 @@ varb3 = eq.Equality(x3, x4)
 varb4 = eq.Equality(x4, x1)
 
 identifier_map = \
-    {'b1': varb1, 'b2': varb2, 'b3': varb3, 'b4': varb4}
+    {1: varb1, 2: varb2, 3: varb3, 4: varb4}
 
-b1, b2, b3, b4 = z3.Bools('b1 b2 b3 b4')
-
-formula = z3.And(b1, b2, b3, z3.Not(b4))
+formula = [
+    [1],
+    [2],
+    [3],
+    [-4]
+]
 
 s = eq.Solver(identifier_map, [x1, x2, x3, x4])
 s.check(formula)
@@ -78,11 +81,13 @@ varb2 = eq.Equality(x2, x3)
 varb3 = eq.Equality(x3, x4)
 
 identifier_map = \
-    {'b1': varb1, 'b2': varb2, 'b3': varb3}
+    {1: varb1, 2: varb2, 3: varb3}
 
-b1, b2, b3 = z3.Bools('b1 b2 b3')
-
-formula = z3.And(b1, b2, b3)
+formula = [
+    [1],
+    [2],
+    [3]
+]
 
 s = eq.Solver(identifier_map, [x1, x2, x3, x4])
 s.check(formula)
@@ -90,23 +95,3 @@ print(s.res)
 print(s.model)
 print(s.assertions)
 print(s.formula)
-
-"""
-pysat
-"""
-
-"""
-(x1 == x4) ^ (x1 == x2 v x1 != x3 v x2 != x4) ^ (x3 == x4 v x2 == x4) ^ (x1 != x2 v x2 == x3)
-b1 ^ (b2 v -b3 v -b4) ^ (b5 v b4) ^ (-b2 v b6)
-"""
-
-s = pysat.Solver()
-
-s.addClause([1])
-s.addClause([2, -3, -4])
-s.addClause([5, 4])
-s.addClause([-2, 6])
-s.buildDataStructure()
-print(s.solve(None))
-solution = s.finalModel
-print(solution)
