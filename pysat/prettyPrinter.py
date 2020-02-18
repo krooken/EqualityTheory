@@ -7,12 +7,12 @@ def printTrail(solver):
     print("--------------------------")
     for i,l in enumerate(solver._trail):
         if len(solver._trailLevels) > currentLevel and solver._trailLevels[currentLevel] == i: currentLevel += 1
-        print(("{p:1s}{ind:6d} | {level:5d} | {lit:5d}".format(ind=i, level=currentLevel, lit=litToInt(l), 
-               p=" " if not i==solver._trailIndexToPropagate else "*")), end="")
-        if solver._reason[litToVar(l)] is not None:
+        print(("{p:1s}{ind:6d} | {level:5d} | {lit:5d}".format(ind=i, level=currentLevel, lit=lit_to_int(l),
+                                                               p=" " if not i==solver._trailIndexToPropagate else "*")), end="")
+        if solver._reason[lit_to_var(l)] is not None:
             print(" r=[", end="")
-            for l in solver._reason[litToVar(l)]:
-                print("{l:5d} ".format(l=litToInt(l)), end="")
+            for l in solver._reason[lit_to_var(l)]:
+                print("{l:5d} ".format(l=lit_to_int(l)), end="")
             print("]")
         else:
             print("")
@@ -28,7 +28,7 @@ def printClauses(solver, assigned = None, value = None):
                     print("\033[1;32m", end="")
                 else:
                     print("\033[1;31m", end="")
-            print("{l:4d}".format(l=litToInt(l)), end="")
+            print("{l:4d}".format(l=lit_to_int(l)), end="")
             if assigned is not None and assigned(l): print("\033[0m",end="")
             print(" ", end="")
         print("")
@@ -37,16 +37,16 @@ def printClauses(solver, assigned = None, value = None):
 def printOccurrences(solver):
     for i in range(0,solver._nbvars):
         for s in range(0,2):
-            l = varToLit(i,s)
-            print(" Lit " + str(litToInt(l)) + " (" + str(l) +") : " + str(len(solver._occurences[l])) + " items")
+            l = var_to_lit(i, s)
+            print(" Lit " + str(lit_to_int(l)) + " (" + str(l) + ") : " + str(len(solver._occurences[l])) + " items")
             for c in solver._occurences[l]:
                 print(str(c) + "-> " + str(c.literals))
 
 def printWatches(solver):
     for i in range(0,solver._nbvars):
         for s in range(0,2):
-            l = varToLit(i,s)
-            print(" Lit " + str(litToInt(l)) + " (" + str(l) +") : " + str(len(solver._watches[l])) + " items")
+            l = var_to_lit(i, s)
+            print(" Lit " + str(lit_to_int(l)) + " (" + str(l) + ") : " + str(len(solver._watches[l])) + " items")
             for c in solver._watches[l]:
                 print(str(c) + "-> " + str(c.literals))
 

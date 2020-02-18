@@ -81,7 +81,7 @@ class Solver():
         return
 
     def _valueLit(self, l):
-        v, s = litToVarSign(l)
+        v, s = lit_to_var_sign(l)
         if self._values[v] is cst.lit_Undef: return cst.lit_Undef
         if s: return cst.lit_False if self._values[v] is cst.lit_True else cst.lit_True
         return self._values[v]
@@ -94,7 +94,7 @@ class Solver():
             v = self._varHeap.removeMin()
             if self._values[v] == cst.lit_Undef: break
         if v is None or self._values[v] != cst.lit_Undef: return None
-        return varToLit(v, True)
+        return var_to_lit(v, True)
 
     def _cancelUntil(self, level=0):
         """ Backtrack to the given level (undoing everything) """
@@ -102,9 +102,9 @@ class Solver():
         x = len(self._trail) - 1
         while x > self._trailLevels[level] - 1:
             l = self._trail[x]
-            self._values[litToVar(l)] = cst.lit_Undef
-            if not self._varHeap.inHeap(litToVar(l)):
-                self._varHeap.insert(litToVar(l))
+            self._values[lit_to_var(l)] = cst.lit_Undef
+            if not self._varHeap.inHeap(lit_to_var(l)):
+                self._varHeap.insert(lit_to_var(l))
             x -= 1
         del self._trail[self._trailLevels[level] - len(self._trail):]
         self._trailIndexToPropagate = self._trailLevels[level]
@@ -119,7 +119,7 @@ class Solver():
     def _uncheckedEnqueue(self, l, r=None):
         """ Enqueue a literal l to the propagation queue.
             This is unchecked in the sense that no contradiction can be detected"""
-        v, s = litToVarSign(l)
+        v, s = lit_to_var_sign(l)
         assert self._values[v] == cst.lit_Undef  # Checks that the literal was not already assigned
         self._values[v] = cst.lit_False if s else cst.lit_True
         self._reason[v] = r
@@ -154,15 +154,15 @@ class Solver():
                     for l in c:  # Update the scores of all this literals
                         if l != litToPropagate:
                             self._scoreLit[l] -= self._computeScore(c.size)
-                            if not heuristicsToUpdate.contains(litToVar(l)): heuristicsToUpdate.append(litToVar(l))
+                            if not heuristicsToUpdate.contains(lit_to_var(l)): heuristicsToUpdate.append(lit_to_var(l))
 
-            for c in self._occ[notLit(litToPropagate)]:
+            for c in self._occ[not_lit(litToPropagate)]:
                 clauseSize = 0
                 unaryClause = False
                 onlyLitUndef = None
                 if c.dll_isSAT: continue
                 for l in c:
-                    if litToVar(l) != litToVar(litToPropagate) and self._valueLit(l) == cst.lit_True:
+                    if lit_to_var(l) != lit_to_var(litToPropagate) and self._valueLit(l) == cst.lit_True:
                         unaryClause = False  # Don't propagate anything, the clause is satisfied
                         onlyLitUndef = l  # dummy assignment
                         break
@@ -182,13 +182,13 @@ class Solver():
                 else:  # The clause is not true, not unary and not empty: its size is reduced by 1 and we need to
                     # update the heuristics!
                     for l in c:
-                        if litToVar(l) != litToVar(litToPropagate) and self._valueLit(l) == cst.lit_Undef:
+                        if lit_to_var(l) != lit_to_var(litToPropagate) and self._valueLit(l) == cst.lit_Undef:
                             None
                     return c
         return None
 
     def addClause(self, listOfInts):
-        self._clauses.append(Clause([intToLit(l) for l in listOfInts]))
+        self._clauses.append(Clause([int_to_lit(l) for l in listOfInts]))
         self._nbvars = max(self._nbvars, max(abs(i) for i in listOfInts))
 
     def buildDataStructure(self):
@@ -204,7 +204,7 @@ class Solver():
                 self._uncheckedEnqueue(c[0])  # FIXME I need to check here if there is a contradiction
             for l in c:
                 self._occ[l].append(c)
-                self._scores[litToVar(l)] += 1  # each occ count as 1
+                self._scores[lit_to_var(l)] += 1  # each occ count as 1
         for i in range(0, self._nbvars):
             self._varHeap.insert(i)
         print("c Building data structures in {t:03.2f}s".format(t=time.time() - starttime))
@@ -234,7 +234,7 @@ class Solver():
                 if self._decisionLevel() is 0: return cst.lit_False  # We proved UNSAT
                 lastDecision = self._trail[self._trailLevels[self._decisionLevel() - 1]]
                 self._cancelUntil(self._decisionLevel() - 1)
-                self._uncheckedEnqueue(notLit(lastDecision))
+                self._uncheckedEnqueue(not_lit(lastDecision))
             else:  # No conflict
                 if self._checkRestart(): return cst.lit_Undef
                 l = self._pickBranchLit()

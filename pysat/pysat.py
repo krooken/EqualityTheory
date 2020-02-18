@@ -43,6 +43,7 @@ class Solver:
         self._varInc = 1  # Amount of each variable bump (multiplied by 1/varDecay after each conflict    )
 
         self.finalModel = []  # the model (if SAT) will be copied in this array of variables)
+        self._status = self._cst.lit_Undef
 
         self._time0 = time.time()
         self._varHeap = SatHeapq(
@@ -59,6 +60,8 @@ class Solver:
         self._sumTrailSize = 0
         self._resolutions = 0
         self._unaryClauses = 0
+        self._time1 = 0.0
+        self._searchTime = 0.0
 
         # Propagation Queue
         self._trail = MyList()  # trail representing the current partial assignment (trail of literals)
@@ -70,7 +73,7 @@ class Solver:
 
     def _valueLit(self, l):
         """ Returns the value of the lit according to the current partial assignment """
-        v, s = litToVarSign(l)
+        v, s = lit_to_var_sign(l)
         if self._values[v] is self._cst.lit_Undef:
             return self._cst.lit_Undef
         if s:
@@ -88,7 +91,7 @@ class Solver:
                 break
         if v is None or self._values[v] != self._cst.lit_Undef:
             return None
-        return varToLit(v, self._polarity[v])  # 1-cache scheme
+        return var_to_lit(v, self._polarity[v])  # 1-cache scheme
 
     def _cancelUntil(self, level=0):
         """ Backtrack to the given level (undoing everything). Real magic function where
@@ -99,8 +102,8 @@ class Solver:
 
         for x in range(len(self._trail) - 1, self._trailLevels[level] - 1, -1):
             l = self._trail[x]
-            v = litToVar(l)
-            self._polarity[v] = signLit(l)  # Memorizes the polarity for branching there next time the variable
+            v = lit_to_var(l)
+            self._polarity[v] = sign_lit(l)  # Memorizes the polarity for branching there next time the variable
             # is selected by pickbranchlit
             self._values[v] = self._cst.lit_Undef  # Simply unassign each variable
             if not self._varHeap.inHeap(v):
@@ -121,7 +124,7 @@ class Solver:
     def _uncheckedEnqueue(self, l, r=None):
         """ Enqueue a literal l to the propagation queue.
             This is unchecked in the sense that no contradiction can be detected"""
-        v, s = litToVarSign(l)
+        v, s = lit_to_var_sign(l)
         assert self._values[v] == self._cst.lit_Undef  # Checks that the literal was not already assigned
         self._values[v] = self._cst.lit_False if s else self._cst.lit_True
         self._reason[v] = r
@@ -155,12 +158,12 @@ class Solver:
                 self._watchesInspections += 1
                 c = wl[i]  # c is a clause containing -litToPropagate watched by it
                 foundNewWatch = False
-                assert notLit(litToPropagate) == c[0] or notLit(litToPropagate) == c[
+                assert not_lit(litToPropagate) == c[0] or not_lit(litToPropagate) == c[
                     1]  # Strong assertion introduced in Minisat
                 assert len(c) > 1  # Clauses of size 1 are just untailed literals at level 0
-                if c[0] == notLit(litToPropagate):  # Make sure the false literal is in 1
+                if c[0] == not_lit(litToPropagate):  # Make sure the false literal is in 1
                     c[0] = c[1]
-                    c[1] = notLit(litToPropagate)  # If we find a new watch we will move it in 0
+                    c[1] = not_lit(litToPropagate)  # If we find a new watch we will move it in 0
 
                 if self._valueLit(c[0]) == self._cst.lit_True:  # The clause is already satisfied (by the other watch)
                     wl[j] = c
@@ -172,7 +175,7 @@ class Solver:
                     if self._valueLit(l) != self._cst.lit_False:  # Found a new (free) watch for l
                         c[k] = c[1]
                         c[1] = l  # moves the watched literal to c[1]
-                        self._watches[notLit(l)].append(c)  # now this clause is watched by l instead of litToPropagate
+                        self._watches[not_lit(l)].append(c)  # now this clause is watched by l instead of litToPropagate
                         self._propMoves += 1
                         i += 1  # wl[i] will not be copied to any smaller wl[j]
                         foundNewWatch = True  # Don't propagate anything, the clause is satisfied
@@ -208,10 +211,11 @@ class Solver:
         backtrackLevel = 0  # Keep track of the largest level in the final clause
         maxbl = -1  # Index of the literal with the largest level (needed to put it in c[1] at the end)
         while pathC > 0 or p is None:
-            if p is not None: self._resolutions += 1  # p is None when we start the analysis with c
+            if p is not None:
+                self._resolutions += 1  # p is None when we start the analysis with c
             for j in range(0 if p is None else 1, len(c)):
                 q = c[j]
-                v = litToVar(q)
+                v = lit_to_var(q)
                 if (self._seen[v] == 0) and (self._level[v] > 0):
                     self._varBump(v)  # VSIDS here, bumps the variable seen in conflict analysis
                     self._seen[v] = 1
@@ -226,16 +230,18 @@ class Solver:
                             maxbl = len(
                                 learnt) - 1  # We need to keep its indice: we'll rearrange the clause before
                             # backtracking
-            while not self._seen[litToVar(self._trail[index])]: index -= 1  # skip all none seen literals
+            while not self._seen[lit_to_var(self._trail[index])]:
+                index -= 1  # skip all none seen literals
             p = self._trail[index]
-            c = self._reason[litToVar(p)]  # c is the clause that unit propagated the literal p
+            c = self._reason[lit_to_var(p)]  # c is the clause that unit propagated the literal p
             # note that, by construction, all literals in c are false except p
-            self._seen[litToVar(p)] = 0
+            self._seen[lit_to_var(p)] = 0
             index -= 1
             pathC -= 1
 
-        learnt[0] = notLit(p)  # The asserting literal (FUIP, where to backtrack)
-        for l in learnt[1:]: self._seen[litToVar(l)] = 0  # remove the remaining seen tags
+        learnt[0] = not_lit(p)  # The asserting literal (FUIP, where to backtrack)
+        for lit in learnt[1:]:
+            self._seen[lit_to_var(lit)] = 0  # remove the remaining seen tags
 
         if len(learnt) > 1:
             p = learnt[maxbl]
@@ -248,7 +254,7 @@ class Solver:
         """ API function to add a clause to the solver. Right now, the function
         buildDataStructure must be called once after all the clauses have been
         added to the solver."""
-        self._clauses.append(Clause([intToLit(l) for l in listOfInts]))
+        self._clauses.append(Clause([int_to_lit(lit) for lit in listOfInts]))
         self._nbvars = max(self._nbvars, max(abs(i) for i in listOfInts))
 
     def buildDataStructure(self):
@@ -267,15 +273,16 @@ class Solver:
         self._watches.growTo(self._nbvars * 2, [])
         for c in self._clauses:
             if len(c) == 1:  # Special case for unary clauses : literal is directly enqueued at decision level 0
-                if self._values[litToVar(c[0])] != self._cst.lit_Undef:
+                if self._values[lit_to_var(c[0])] != self._cst.lit_Undef:
                     # the literal has already a value. Case not (yet) properly handled in this version
                     print("c Ooch you should use a preprocessor to clean your formula.")
                     sys.exit(1)
                 self._uncheckedEnqueue(c[0])  # FIXME I need to check here if there is a contradiction
             for l in c[0:2]:
-                self._watches[notLit(l)].append(c)
+                self._watches[not_lit(l)].append(c)
 
-        for i in range(0, self._nbvars): self._varHeap.insert(i)  # push all the variables on the heap
+        for i in range(0, self._nbvars):
+            self._varHeap.insert(i)  # push all the variables on the heap
 
         if self._config.verbosity > 0:
             print("c Building data structures in {t:03.2f}s".format(t=time.time() - starttime))
@@ -292,8 +299,8 @@ class Solver:
 
     def _attachClause(self, c):
         """ Attach a clause, will be watched by its 2 first literals """
-        self._watches[notLit(c[0])].append(c)  # This will attach the clause
-        self._watches[notLit(c[1])].append(c)  # attach clause, second watched
+        self._watches[not_lit(c[0])].append(c)  # This will attach the clause
+        self._watches[not_lit(c[1])].append(c)  # attach clause, second watched
 
     # Simply print the search progress
     def _reportSearch(self):
@@ -323,9 +330,11 @@ class Solver:
                 self._sumDecisionLevel += self._decisionLevel()  # stats about the search
                 self._sumTrailSize += len(self._trail)
 
-                if self._conflicts % 100 == 0: self._reportSearch()  # reports the search status evert 100 conflicts
+                if self._conflicts % 100 == 0:
+                    self._reportSearch()  # reports the search status evert 100 conflicts
 
-                if self._decisionLevel() is 0: return self._cst.lit_False  # We proved UNSAT
+                if self._decisionLevel() is 0:
+                    return self._cst.lit_False  # We proved UNSAT
 
                 nc, backtrackLevel = self._analyze(confl)  # TODO: the lbd mechanism is not implemented
                 self._varInc /= self._config.varDecay
@@ -340,16 +349,19 @@ class Solver:
                     self._attachClause(ncc)
                     self._uncheckedEnqueue(nc[0], ncc)
             else:  # No conflict
-                if self._checkRestart(): break  # triggers a restart (dynamic strategues)
+                if self._checkRestart():
+                    break  # triggers a restart (dynamic strategues)
                 self._checkDBReduce()  # We may need to clean up the set of learnt clauses
 
                 l = self._pickBranchLit()  # Picks a new variable to branch on
-                if l == None: return self._cst.lit_True  # All variables are assigned and no conflict: SAT was proven
+                if l is None:
+                    return self._cst.lit_True  # All variables are assigned and no conflict: SAT was proven
                 self._newDecisionLevel()  # Creates a new decision level
                 self._uncheckedEnqueue(l)  # propagates this literal with no reason (this is a decision)
 
         self._cancelUntil(
-            0)  # Notes that if SAT was proved, no cancelUntil will be called and thus all variables keep their assigned values
+            0)  # Notes that if SAT was proved, no cancelUntil will be called and thus all variables keep their
+        # assigned values
         return self._cst.lit_Undef
 
     # by default we impose a simple restart strategy (call it with maxConflicts = None for no restarts)
