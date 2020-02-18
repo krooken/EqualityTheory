@@ -1,6 +1,5 @@
-import union_find
-import z3
 import pysat
+import union_find
 
 
 class Variable:
@@ -39,7 +38,7 @@ class Theory:
         self.variables = variables
         self.model = model
         self.nodes = dict()
-        self.sat = pysat.Solver.Constants.lit_Undef
+        self.sat = pysat.lit_Undef
 
         for v in self.variables:
             self.nodes[v.identifier] = union_find.UnionNode(v)
@@ -75,19 +74,19 @@ class Theory:
 
         self.build_relation()
 
-        self.sat = pysat.Solver.Constants.lit_True
+        self.sat = pysat.lit_True
 
         for var in self.model:
             left_node, right_node = self.get_corresponding_nodes(abs(var))
 
             if not var > 0 and left_node == right_node:
-                self.sat = pysat.Solver.Constants.lit_False
+                self.sat = pysat.lit_False
 
         return self.sat
 
     def learn_clause(self):
 
-        if self.sat == pysat.Solver.Constants.lit_Undef or self.sat == pysat.Solver.Constants.lit_True:
+        if self.sat == pysat.lit_Undef or self.sat == pysat.lit_True:
             return None
 
         else:
@@ -104,7 +103,7 @@ class Solver:
 
         self.solver = pysat.Solver()
         self.theory = Theory(identifier_map, variables)
-        self.res = pysat.Solver.Constants.lit_Undef
+        self.res = pysat.lit_Undef
         self.model = None
         self.assertions = None
         self.formula = None
@@ -120,15 +119,15 @@ class Solver:
                 self.solver.addClause(clause)
             self.solver.buildDataStructure()
             sat_res = self.solver.solve(None)
-            if pysat.Solver.Constants.lit_False == sat_res:
+            if pysat.lit_False == sat_res:
                 self.res = sat_res
                 break
-            elif pysat.Solver.Constants.lit_Undef == sat_res:
+            elif pysat.lit_Undef == sat_res:
                 self.res = sat_res
                 break
             else:
                 theory_res = self.theory.check(self.solver.finalModel)
-                if pysat.Solver.Constants.lit_True == theory_res:
+                if pysat.lit_True == theory_res:
                     self.res = theory_res
                     break
                 learnt_clause = self.theory.learn_clause()
