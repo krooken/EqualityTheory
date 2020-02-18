@@ -1,3 +1,5 @@
+import time
+
 import equivalence as eq
 
 """
@@ -28,8 +30,16 @@ formula = [
 ]
 
 s = eq.Solver(identifier_map, [x1, x2, x3, x4])
+time1 = time.time()
 s.check(formula)
+time2 = time.time()
 print(s.res)
+print(s.model)
+print(s.assertions)
+print(s.formula)
+
+s = eq.CdclSolver(identifier_map, [x1, x2, x3, x4])
+print(s.check(formula))
 print(s.model)
 print(s.assertions)
 print(s.formula)
@@ -66,6 +76,12 @@ print(s.model)
 print(s.assertions)
 print(s.formula)
 
+s = eq.CdclSolver(identifier_map, [x1, x2, x3, x4])
+print(s.check(formula))
+print(s.model)
+print(s.assertions)
+print(s.formula)
+
 """
 x1 == x2 ^ x2 == x3 ^ x3 == x4
 b1 ^ b2 ^ b3
@@ -92,6 +108,12 @@ formula = [
 s = eq.Solver(identifier_map, [x1, x2, x3, x4])
 s.check(formula)
 print(s.res)
+print(s.model)
+print(s.assertions)
+print(s.formula)
+
+s = eq.CdclSolver(identifier_map, [x1, x2, x3, x4])
+print(s.check(formula))
 print(s.model)
 print(s.assertions)
 print(s.formula)

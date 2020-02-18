@@ -1,5 +1,6 @@
 import pysat
 import union_find
+import time
 
 
 class Variable:
@@ -134,4 +135,26 @@ class Solver:
                 self.formula += [learnt_clause]
 
         self.model = self.solver.finalModel
+        return self.res
+
+
+class CdclSolver:
+
+    def __init__(self, identifier_map, variables):
+
+        self.solver = pysat.Solver()
+        self.theory = Theory(identifier_map, variables)
+        self.res = pysat.lit_Undef
+        self.model = None
+        self.assertions = None
+        self.formula = None
+
+    def check(self, formula):
+        self.solver._config.verbosity = 0
+        for clause in formula:
+            self.solver.addClause(clause)
+        self.solver.buildDataStructure()
+        self.res = self.solver.solve(None, self.theory)
+        self.model = self.solver.finalModel
+        self.formula = [clause.to_list_of_ints() for clause in self.solver._clauses]
         return self.res

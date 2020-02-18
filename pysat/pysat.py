@@ -42,6 +42,8 @@ class Solver:
         self._level = MyArray('I')  # decision level of this assigned variable
         self._varInc = 1  # Amount of each variable bump (multiplied by 1/varDecay after each conflict    )
 
+        self._theory = None
+
         self.finalModel = []  # the model (if SAT) will be copied in this array of variables)
         self._status = self._cst.lit_Undef
 
@@ -318,6 +320,15 @@ class Solver:
 
         # The main CDCL search procedure, limited to "budget" conflicts
 
+    def _current_assignment(self):
+        current_model = []
+        for var, val in enumerate(self._values):
+            if val is not self._cst.lit_Undef:
+                lit = var_to_lit(var, 0 if val == self._cst.lit_True else 1)
+                int_var = lit_to_int(lit)
+                current_model.append(int_var)  # API: users can read the values in this array
+        return current_model
+
     def _search(self, budget=None):
         conflictC = 0  # Number of conflicts for this search
 
@@ -355,7 +366,34 @@ class Solver:
 
                 l = self._pickBranchLit()  # Picks a new variable to branch on
                 if l is None:
-                    return self._cst.lit_True  # All variables are assigned and no conflict: SAT was proven
+                    if self._theory is not None:
+                        current_assignment = self._current_assignment()
+                        sat = self._theory.check(current_assignment)
+                        if sat == self._cst.lit_True:
+                            return sat
+                        nc = self._theory.learn_clause()
+                        ncc = Clause([int_to_lit(lit) for lit in nc])
+                        backtrack_level = self._decisionLevel()
+                        if self._decisionLevel() <= 0:
+                            return self._cst.lit_False
+                        self._cancelUntil(backtrack_level - 1)
+                        i = 0
+                        for j, lit in enumerate(ncc):
+                            if i >= 2:
+                                break
+                            var = lit_to_var(lit)
+                            if self._values[var] == self._cst.lit_Undef:
+                                lit_copy = ncc[i]
+                                ncc[i] = lit
+                                ncc[j] = lit_copy
+                                i += 1
+                        self._clauses.append(ncc)
+                        self._attachClause(ncc)
+                        l = self._pickBranchLit()
+
+                    else:
+                        return self._cst.lit_True  # All variables are assigned and no conflict: SAT was proven
+
                 self._newDecisionLevel()  # Creates a new decision level
                 self._uncheckedEnqueue(l)  # propagates this literal with no reason (this is a decision)
 
@@ -365,10 +403,11 @@ class Solver:
         return self._cst.lit_Undef
 
     # by default we impose a simple restart strategy (call it with maxConflicts = None for no restarts)
-    def solve(self, maxConflicts=lambda s: int((100 * (1.5 ** s._restarts)))):
+    def solve(self, maxConflicts=lambda s: int((100 * (1.5 ** s._restarts))), theory=None):
         """The solve repeatedly call the search function (each time a restart is fired,
            the search function returns lit_Undef). This function can return lit_Undef
            if interrupted by the user."""
+        self._theory = theory
         self._time1 = time.time()
         try:
             self._status = self._cst.lit_Undef

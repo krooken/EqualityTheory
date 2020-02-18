@@ -75,6 +75,9 @@ class Clause:
     def get_score(self):
         return self.score
 
+    def to_list_of_ints(self):
+        return [lit_to_int(lit) for lit in self.literals.tolist()]
+
     def _calc_abstraction(self):
         """ Computes a simple Bloom filter for the clause. Will be used when we'll preprocess the formulas"""
         bloom_filter = 0
@@ -88,7 +91,7 @@ class Clause:
 
     def __str__(self):
         """ Gets the clause as a list of literals """
-        return ",".join(list(map(lambda l: str(lit_to_int(l)), self.literals)))
+        return "[" + ", ".join(list(map(lambda l: str(lit_to_int(l)), self.literals))) + "]"
 
     def __getitem__(self, x):
         return self.literals[x]
