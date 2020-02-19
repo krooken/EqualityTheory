@@ -377,20 +377,8 @@ class Solver:
                         if self._decisionLevel() <= 0:
                             return self._cst.lit_False
 
-                        nc = self._theory.learn_clause()
-                        ncc = Clause([int_to_lit(lit) for lit in nc])
-                        backtrack_level = self._decisionLevel()
-                        self._cancelUntil(backtrack_level - 1)
-                        i = 0
-                        for j, lit in enumerate(ncc):
-                            if i >= 2:
-                                break
-                            var = lit_to_var(lit)
-                            if self._values[var] == self._cst.lit_Undef:
-                                lit_copy = ncc[i]
-                                ncc[i] = lit
-                                ncc[j] = lit_copy
-                                i += 1
+                        ncc = self._deduction()
+
                         self._clauses.append(ncc)
                         self._attachClause(ncc)
                         self._uncheckedEnqueue(ncc[0], ncc)
@@ -405,6 +393,23 @@ class Solver:
             0)  # Notes that if SAT was proved, no cancelUntil will be called and thus all variables keep their
         # assigned values
         return self._cst.lit_Undef
+
+    def _deduction(self):
+        nc = self._theory.learn_clause()
+        ncc = Clause([int_to_lit(lit) for lit in nc])
+        backtrack_level = self._decisionLevel()
+        self._cancelUntil(backtrack_level - 1)
+        i = 0
+        for j, lit in enumerate(ncc):
+            if i >= 2:
+                break
+            var = lit_to_var(lit)
+            if self._values[var] == self._cst.lit_Undef:
+                lit_copy = ncc[i]
+                ncc[i] = lit
+                ncc[j] = lit_copy
+                i += 1
+        return ncc
 
     # by default we impose a simple restart strategy (call it with maxConflicts = None for no restarts)
     def solve(self, maxConflicts=lambda s: int((100 * (1.5 ** s._restarts))), theory=None):
