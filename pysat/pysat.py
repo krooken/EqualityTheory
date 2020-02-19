@@ -367,15 +367,19 @@ class Solver:
                 l = self._pickBranchLit()  # Picks a new variable to branch on
                 if l is None:
                     if self._theory is not None:
+
                         current_assignment = self._current_assignment()
                         sat = self._theory.check(current_assignment)
+
                         if sat == self._cst.lit_True:
                             return sat
+
+                        if self._decisionLevel() <= 0:
+                            return self._cst.lit_False
+
                         nc = self._theory.learn_clause()
                         ncc = Clause([int_to_lit(lit) for lit in nc])
                         backtrack_level = self._decisionLevel()
-                        if self._decisionLevel() <= 0:
-                            return self._cst.lit_False
                         self._cancelUntil(backtrack_level - 1)
                         i = 0
                         for j, lit in enumerate(ncc):
@@ -389,13 +393,13 @@ class Solver:
                                 i += 1
                         self._clauses.append(ncc)
                         self._attachClause(ncc)
-                        l = self._pickBranchLit()
+                        self._uncheckedEnqueue(ncc[0], ncc)
 
                     else:
                         return self._cst.lit_True  # All variables are assigned and no conflict: SAT was proven
-
-                self._newDecisionLevel()  # Creates a new decision level
-                self._uncheckedEnqueue(l)  # propagates this literal with no reason (this is a decision)
+                else:
+                    self._newDecisionLevel()  # Creates a new decision level
+                    self._uncheckedEnqueue(l)  # propagates this literal with no reason (this is a decision)
 
         self._cancelUntil(
             0)  # Notes that if SAT was proved, no cancelUntil will be called and thus all variables keep their
