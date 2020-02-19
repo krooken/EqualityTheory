@@ -111,7 +111,7 @@ class Solver:
 
     def check(self, formula):
 
-        self.formula = formula
+        self.formula = formula.copy()
 
         while True:
             self.solver = pysat.Solver()
