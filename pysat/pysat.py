@@ -43,6 +43,7 @@ class Solver:
         self._varInc = 1  # Amount of each variable bump (multiplied by 1/varDecay after each conflict    )
 
         self._theory = None
+        self._dpll_t = False
 
         self.finalModel = []  # the model (if SAT) will be copied in this array of variables)
         self._status = self._cst.lit_Undef
@@ -142,8 +143,8 @@ class Solver:
             for i in range(0, len(self._scores)):
                 self._scores[i] *= 1e-100
             self._varInc *= 1e-100
-        if self._varHeap.inHeap(v): self._varHeap.decrease(
-            v)  # This is a lazy bump: assigned variables will be replaced during cancelUntil
+        if self._varHeap.inHeap(v):
+            self._varHeap.decrease(v)  # This is a lazy bump: assigned variables will be replaced during cancelUntil
 
     def _propagate(self):
         """ Can return a conflict or None
@@ -359,6 +360,16 @@ class Solver:
                     self._learnts.append(ncc)
                     self._attachClause(ncc)
                     self._uncheckedEnqueue(nc[0], ncc)
+            elif self._dpll_t and self._theory is not None \
+                    and not self._theory.check(self._current_assignment()) == self._cst.lit_True:
+
+                if self._decisionLevel() <= 0:
+                    return self._cst.lit_False
+
+                ncc = self._deduction()
+                self._clauses.append(ncc)
+                self._attachClause(ncc)
+                self._uncheckedEnqueue(ncc[0], ncc)
             else:  # No conflict
                 if self._checkRestart():
                     break  # triggers a restart (dynamic strategues)
@@ -412,11 +423,12 @@ class Solver:
         return ncc
 
     # by default we impose a simple restart strategy (call it with maxConflicts = None for no restarts)
-    def solve(self, maxConflicts=lambda s: int((100 * (1.5 ** s._restarts))), theory=None):
+    def solve(self, maxConflicts=lambda s: int((100 * (1.5 ** s._restarts))), theory=None, dpll_t=False):
         """The solve repeatedly call the search function (each time a restart is fired,
            the search function returns lit_Undef). This function can return lit_Undef
            if interrupted by the user."""
         self._theory = theory
+        self._dpll_t = dpll_t
         self._time1 = time.time()
         try:
             self._status = self._cst.lit_Undef

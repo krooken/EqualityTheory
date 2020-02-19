@@ -44,6 +44,12 @@ print(s.model)
 print(s.assertions)
 print(s.formula)
 
+s = eq.DplltSolver(identifier_map, [x1, x2, x3, x4])
+print(s.check(formula))
+print(s.model)
+print(s.assertions)
+print(s.formula)
+
 """
 x1 == x2 ^ x2 == x3 ^ x3 == x4 ^ x4 != x1
 b1 ^ b2 ^ b3 ^ -b4
@@ -77,6 +83,12 @@ print(s.assertions)
 print(s.formula)
 
 s = eq.CdclSolver(identifier_map, [x1, x2, x3, x4])
+print(s.check(formula))
+print(s.model)
+print(s.assertions)
+print(s.formula)
+
+s = eq.DplltSolver(identifier_map, [x1, x2, x3, x4])
 print(s.check(formula))
 print(s.model)
 print(s.assertions)
@@ -117,3 +129,10 @@ print(s.check(formula))
 print(s.model)
 print(s.assertions)
 print(s.formula)
+
+s = eq.DplltSolver(identifier_map, [x1, x2, x3, x4])
+print(s.check(formula))
+print(s.model)
+print(s.assertions)
+print(s.formula)
+
