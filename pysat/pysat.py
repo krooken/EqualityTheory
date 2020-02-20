@@ -369,7 +369,9 @@ class Solver:
                 ncc = self._deduction()
                 self._clauses.append(ncc)
                 self._attachClause(ncc)
-                self._uncheckedEnqueue(ncc[0], ncc)
+                lit = self._pickBranchLit()
+                self._newDecisionLevel()
+                self._uncheckedEnqueue(lit)
             else:  # No conflict
                 if self._checkRestart():
                     break  # triggers a restart (dynamic strategues)
@@ -392,7 +394,9 @@ class Solver:
 
                         self._clauses.append(ncc)
                         self._attachClause(ncc)
-                        self._uncheckedEnqueue(ncc[0], ncc)
+                        lit = self._pickBranchLit()
+                        self._newDecisionLevel()
+                        self._uncheckedEnqueue(lit)
 
                     else:
                         return self._cst.lit_True  # All variables are assigned and no conflict: SAT was proven
@@ -407,9 +411,17 @@ class Solver:
 
     def _deduction(self):
         nc = self._theory.learn_clause()
-        ncc = Clause([int_to_lit(lit) for lit in nc])
-        backtrack_level = self._decisionLevel()
-        self._cancelUntil(backtrack_level - 1)
+        ncc = Clause([int_to_lit(int_rep) for int_rep in nc])
+        variables = [lit_to_var(lit) for lit in ncc]
+        levels = [self._level[var] for var in variables]
+        maximum = 0
+        previous_max = 0
+        for level in levels:
+            if level > maximum:
+                previous_max = maximum
+                maximum = level
+        backtrack_level = previous_max
+        self._cancelUntil(backtrack_level)
         i = 0
         for j, lit in enumerate(ncc):
             if i >= 2:
