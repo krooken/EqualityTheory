@@ -23,7 +23,7 @@ class UnionNode:
 
         if self.parent is not None:
 
-            return self.parent
+            return self.parent.find()
 
         else:
 
