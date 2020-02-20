@@ -62,10 +62,11 @@ class Theory:
     def build_relation(self):
 
         for var in self.model:
-            left_node, right_node = self.get_corresponding_nodes(abs(var))
+            if abs(var) in self.identifier_map:
+                left_node, right_node = self.get_corresponding_nodes(abs(var))
 
-            if var > 0:
-                left_node.merge(right_node)
+                if var > 0:
+                    left_node.merge(right_node)
 
     def check(self, model=None):
 
@@ -78,10 +79,11 @@ class Theory:
         self.sat = pysat.lit_True
 
         for var in self.model:
-            left_node, right_node = self.get_corresponding_nodes(abs(var))
+            if abs(var) in self.identifier_map:
+                left_node, right_node = self.get_corresponding_nodes(abs(var))
 
-            if not var > 0 and left_node == right_node:
-                self.sat = pysat.lit_False
+                if not var > 0 and left_node == right_node:
+                    self.sat = pysat.lit_False
 
         return self.sat
 
@@ -93,8 +95,9 @@ class Theory:
         else:
             clause = []
             for var in self.model:
-                bool_var = -var
-                clause += [bool_var]
+                if abs(var) in self.identifier_map:
+                    bool_var = -var
+                    clause += [bool_var]
             return clause
 
 
