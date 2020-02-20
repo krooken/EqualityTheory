@@ -338,5 +338,207 @@ class LazyBasicTestCase(unittest.TestCase):
             s.formula, "Formula is incorrect")
 
 
+class LazyCdclTestCase(unittest.TestCase):
+
+    def test_simple_case(self):
+        identifier_map, variables, formula, sat = simple_sat_case()
+
+        s = eq.CdclSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual([1, 2, 3], s.model, "Model is incorrect")
+        self.assertListEqual([[1], [2], [3]], s.formula, "Formula is incorrect")
+
+    def test_unsat_case(self):
+        identifier_map, variables, formula, sat = simple_unsat_case()
+
+        s = eq.CdclSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual([], s.model, "Model is incorrect")
+        self.assertListEqual([[1], [2], [3], [-4]], s.formula, "Formula is incorrect")
+
+    def test_case(self):
+        identifier_map, variables, formula, sat = basic_sat_case()
+
+        s = eq.CdclSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual([1, -2, 3, -4, 5, -6], s.model, "Model is incorrect")
+        self.assertListEqual(
+            [[1],
+             [-4, -3, 2],
+             [5, 4],
+             [-2, 6],
+             [5, -4, -1, 2, 3, 6],
+             [2, -4, 3, -1, -5, 6],
+             [3, 4, -1, 2, -5, 6]],
+            s.formula, "Formula is incorrect")
+
+    def test_complicated_with_tseitin(self):
+        identifier_map, variables, formula, sat = complicated_tseitin_case()
+
+        s = eq.CdclSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual(
+            [1, -2, 3, -4, 5,
+             -6, 7, 8, -9, -10,
+             11, 12, 13, -14, -15,
+             -16, -17, -18], s.model, "Model is incorrect")
+        self.assertListEqual(
+            [[12],
+             [13, 14, -12],
+             [1, -13],
+             [3, -13],
+             [5, -13],
+             [-2, -13],
+             [-4, -13],
+             [-6, -13],
+             [-14, 16, 15],
+             [1, -15],
+             [-15, 3],
+             [-15, 5],
+             [-2, -15],
+             [-4, -15],
+             [-15, -6],
+             [-15, 9],
+             [-16, 17, 18],
+             [1, -17],
+             [3, -17],
+             [5, -17],
+             [-2, -17],
+             [-4, -17],
+             [-6, -17],
+             [7, -17],
+             [8, -17],
+             [-17, 10],
+             [1, -18],
+             [3, -18],
+             [5, -18],
+             [-2, -18],
+             [-4, -18],
+             [-6, -18],
+             [7, -18],
+             [11, -18],
+             [-18, -8],
+             [-9, 10, 2, 4, 6, -3, 8, -1, -5, 11, 7],
+             [7, -8, -3, 4, -5, 6, -1, 2, -9, 10, 11],
+             [11, -8, -3, 4, -5, 6, 7, -10, -9, -1, 2],
+             [7, -10, -3, 4, -5, 6, -8, -11, -9, -1, 2],
+             [7, -8, -3, 4, -5, 6, -11, 10, -9, -1, 2],
+             [-9, -10, -11, 4, -5, -3, -7, 6, -8, -1, 2],
+             [11, -8, -3, 4, -5, 6, -7, -10, -9, -1, 2],
+             [11, -8, -3, 4, -5, 6, 10, -7, -9, -1, 2],
+             [-9, 10, -11, 4, -5, -3, 6, -7, -8, -1, 2],
+             [-9, 10, 2, 4, 6, -3, -7, 8, -5, 11, -1],
+             [-9, 10, -11, 4, 6, -3, -1, 8, -5, 2, -7],
+             [7, 10, -3, 4, -5, 6, -1, 8, -9, 2, -11],
+             [7, -3, -11, 4, -5, 6, -10, 8, -9, -1, 2],
+             [7, 11, -3, 4, -5, 6, -10, 8, -9, -1, 2],
+             [-9, -10, -11, 4, 2, 6, -7, 8, -3, -5, -1],
+             [11, -10, -3, 4, -5, 6, -7, 8, -9, -1, 2],
+             [2, 8, -3, 4, -5, 6, -7, 10, 9, -1, -11],
+             [8, -10, -1, 4, 2, -5, -7, -3, 6, 9, -11],
+             [2, -10, -3, 4, -5, 6, -7, -8, 9, -1, -11]],
+            s.formula, "Formula is incorrect")
+
+
+class DplltTestCase(unittest.TestCase):
+
+    def test_simple_case(self):
+        identifier_map, variables, formula, sat = simple_sat_case()
+
+        s = eq.DplltSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual([1, 2, 3], s.model, "Model is incorrect")
+        self.assertListEqual([[1], [2], [3]], s.formula, "Formula is incorrect")
+
+    def test_unsat_case(self):
+        identifier_map, variables, formula, sat = simple_unsat_case()
+
+        s = eq.DplltSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual([], s.model, "Model is incorrect")
+        self.assertListEqual([[1], [2], [3], [-4]], s.formula, "Formula is incorrect")
+
+    def test_case(self):
+        identifier_map, variables, formula, sat = basic_sat_case()
+
+        s = eq.DplltSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual([1, -2, 3, -4, 5, -6], s.model, "Model is incorrect")
+        self.assertListEqual(
+            [[1],
+             [-4, -3, 2],
+             [5, 4],
+             [-2, 6],
+             [5, 3, -1, 2, -4, 6],
+             [-4, 3, -1, 2, -5, 6],
+             [3, 4, -1, 2, -5, 6]],
+            s.formula, "Formula is incorrect")
+
+    def test_complicated_with_tseitin(self):
+        identifier_map, variables, formula, sat = complicated_tseitin_case()
+
+        s = eq.DplltSolver(identifier_map, variables)
+        s.check(formula)
+
+        self.assertEqual(sat, s.res, "SAT is incorrect")
+        self.assertListEqual(
+            [1, -2, 3, -4, 5,
+             -6, -7, -8, -9, -10,
+             -11, 12, 13, -14, -15,
+             -16, -17, -18], s.model, "Model is incorrect")
+        self.assertListEqual(
+            [[12],
+             [13, 14, -12],
+             [1, -13],
+             [3, -13],
+             [5, -13],
+             [-2, -13],
+             [-4, -13],
+             [-6, -13],
+             [-14, 16, 15],
+             [1, -15],
+             [3, -15],
+             [5, -15],
+             [-2, -15],
+             [-4, -15],
+             [-15, -6],
+             [-15, 9],
+             [-16, 18, 17],
+             [-17, 1],
+             [-17, 3],
+             [-17, 5],
+             [-17, -2],
+             [-17, -4],
+             [-17, -6],
+             [-17, 7],
+             [-17, 8],
+             [-17, 10],
+             [-18, 1],
+             [-18, 3],
+             [-18, 5],
+             [-18, -2],
+             [-18, -4],
+             [-18, -6],
+             [-18, 7],
+             [-18, 11],
+             [-18, -8],
+             [-9, 4, -1, 6, -5, 2, -3]],
+            s.formula, "Formula is incorrect")
+
+
 if __name__ == '__main__':
     unittest.main()
